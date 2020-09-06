@@ -8,32 +8,34 @@ use std::process::Command;
 const ASSET: &str = "assets:fundingsocieties";
 const FUNDS: &str = "assets:funds:fundingsocieties";
 const BANK: &str = "assets:bank:pbe";
+const INCOME: &str = "income:interest";
+const EXPENSE: &str = "expenses:service";
 
 const COMMODITY: &str = "RM";
 const INDENT: &str = "\t";
 const LINE_WIDTH: usize = 62;
 
-fn pay(buf: &mut dyn Write, account: &str, sign: &str, amount: &str) -> io::Result<()> {
+fn pay(buf: &mut dyn Write, acc: &str, sign: &str, amt: &str, cmt: &str) -> io::Result<()> {
     let commodity_width = COMMODITY.len();
     let indent_width = if INDENT == "\t" { 8 } else { INDENT.len() };
-    let pad =
-        LINE_WIDTH - indent_width - account.len() - commodity_width - sign.len() - amount.len() - 1;
+    let pad = LINE_WIDTH - indent_width - acc.len() - commodity_width - sign.len() - amt.len() - 1;
 
     writeln!(
         buf,
-        "{}{}{:pad$}{} {}{}",
+        "{}{}{:pad$}{} {}{}  ; {}",
         INDENT,
-        account,
+        acc,
         "",
         COMMODITY,
         sign,
-        amount,
+        amt,
+        cmt,
         pad = pad
     )
 }
 
 fn main() -> io::Result<()> {
-    let re = r"\d{4}-(\d{2}-\d{2})\s(.*?)(?: \|\| (.*))?\s\(([\d,]+\.\d{2})\)\s([\d,]+\.\d{2})\s([\d,]+\.\d{2})\s";
+    let re = r"\d{4}-(\d{2}-\d{2})\s(.*?)(?: \|\| (\D+))?\s\(([\d,]+\.\d{2})\)\s([\d,]+\.\d{2})\s([\d,]+\.\d{2})\s";
     let re = Regex::new(re).unwrap();
 
     // argument parsing
@@ -66,6 +68,9 @@ fn main() -> io::Result<()> {
         .nth(1)
         .expect("Cannot split table end");
 
+    // convert to single line, sometimes newline appear in middle
+    let src = &src.replace('\n', " ");
+
     // parse and output ledger
     let mut captures = re.captures_iter(src).peekable();
     while let Some(mut cap) = captures.next() {
@@ -79,16 +84,19 @@ fn main() -> io::Result<()> {
         writeln!(buf, "{} * {}", &cap[1], title)?;
         writeln!(buf, "{}{}", INDENT, ASSET)?;
         if &cap[5] == "0.00" && cap[2].contains("invested") {
-            pay(buf, FUNDS, "", &cap[4])?;
+            let cmt = &cap[2].splitn(2, ": ").next().unwrap();
+            pay(buf, FUNDS, "", &cap[4], cmt)?;
         } else if &cap[2] == "Deposit" {
-            pay(buf, BANK, "-", &cap[5])?;
+            pay(buf, BANK, "-", &cap[5], &cap[2])?;
         } else {
             // TODO handle withdrawal
             loop {
                 match (&cap[3], &cap[4], &cap[5]) {
-                    ("Service Fee", amt, "0.00") => pay(buf, "expenses:service", "", amt)?,
-                    ("Interest", "0.00", amt) => pay(buf, "income:interest", "-", amt)?,
-                    ("Principal", "0.00", amt) => pay(buf, FUNDS, "-", amt)?,
+                    (cmt @ "Service Fee", amt, "0.00") => pay(buf, EXPENSE, "", amt, cmt)?,
+                    (cmt @ "Interest", "0.00", amt) => pay(buf, INCOME, "-", amt, cmt)?,
+                    (cmt @ "Principal", "0.00", amt) => pay(buf, FUNDS, "-", amt, cmt)?,
+                    (cmt @ "Early Payment Fee", "0.00", amt) => pay(buf, FUNDS, "-", amt, cmt)?,
+                    (cmt @ "Late Interest Fee", "0.00", amt) => pay(buf, FUNDS, "-", amt, cmt)?,
                     (_, dr, cr) => unimplemented!("{} - {} {} {}", &cap[2], &cap[3], dr, cr),
                 }
                 if let Some(ncap) = captures.peek() {

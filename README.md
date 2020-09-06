@@ -19,17 +19,17 @@ Example output (obfuscated):
 ```ledger
 01-01 * Funding Societies
 	assets:fundingsocieties
-	assets:bank:pbe                              RM 100.00
+	assets:bank:pbe                              RM 100.00  ; Deposit
 
 01-02 * XXXX-00000000
 	assets:fundingsocieties
-	assets:funds:fundingsocieties                RM 100.00
+	assets:funds:fundingsocieties                RM 100.00  ; Auto Investment
 
 01-31 * XXXX-00000000 (1 of 1 repayment)
 	assets:fundingsocieties
-	assets:funds:fundingsocieties               RM -100.00
-	income:interest                               RM -1.00
-	expenses:service                               RM 0.20
+	assets:funds:fundingsocieties               RM -100.00  : Principal
+	income:interest                               RM -1.00  ; Interest
+	expenses:service                               RM 0.20  ; Service Fee
 ```
 
 ## License
