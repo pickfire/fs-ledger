@@ -74,7 +74,7 @@ fn main() -> io::Result<()> {
     // parse and output ledger
     let mut captures = re.captures_iter(src).peekable();
     while let Some(mut cap) = captures.next() {
-        let title = if &cap[2] == "Deposit" {
+        let title = if &cap[2] == "Deposit" || cap[2].starts_with("Withdrawal") {
             "Funding Societies"
         } else if cap[2].contains("invested") {
             &cap[2].rsplit("into ").next().unwrap()
@@ -88,8 +88,9 @@ fn main() -> io::Result<()> {
             pay(buf, FUNDS, "", &cap[4], cmt)?;
         } else if &cap[2] == "Deposit" {
             pay(buf, BANK, "-", &cap[5], &cap[2])?;
+        } else if cap[2].starts_with("Withdrawal") {
+            pay(buf, BANK, "", &cap[4], &cap[2])?;
         } else {
-            // TODO handle withdrawal
             loop {
                 match (&cap[3], &cap[4], &cap[5]) {
                     (cmt @ "Service Fee", amt, "0.00") => pay(buf, EXPENSE, "", amt, cmt)?,

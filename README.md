@@ -11,7 +11,7 @@ It depends on pdftotext by poppler. Note, the account used may be different.
     cd fs-ledger
     cargo install --path .
     fs-ledger it@example.com_2020-01-01_2020-02-31_Statement.pdf 2020-fs.ledger
-    
+
 Remember to add `include 2020-fs.ledger` to your main ledger file.
 
 Example output (obfuscated):
@@ -24,6 +24,10 @@ Example output (obfuscated):
 01-02 * XXXX-00000000
 	assets:fundingsocieties
 	assets:funds:fundingsocieties                RM 100.00  ; Auto Investment
+
+01-30 * Funding Societies
+	assets:fundingsocieties
+	assets:bank:pbe                               RM 10.00  ; Withdrawal For Name
 
 01-31 * XXXX-00000000 (1 of 1 repayment)
 	assets:fundingsocieties
