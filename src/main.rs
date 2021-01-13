@@ -35,7 +35,7 @@ fn pay(buf: &mut dyn Write, acc: &str, sign: &str, amt: &str, cmt: &str) -> io::
 }
 
 fn main() -> io::Result<()> {
-    let re = r" \d{4}-(\d{2}-\d{2})  (.*?)(?: \| \| (\D+))?  \(([\d,]+\.\d{2})\)  ([\d,]+\.\d{2})  ([\d,]+\.\d{2}) ";
+    let re = r" (\d{4}-\d{2}-\d{2})  (.*?)(?: \| \| (\D+))?  \(([\d,]+\.\d{2})\)  ([\d,]+\.\d{2})  ([\d,]+\.\d{2}) ";
     let re = Regex::new(re).unwrap();
 
     // argument parsing
