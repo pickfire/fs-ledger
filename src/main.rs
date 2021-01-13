@@ -35,7 +35,7 @@ fn pay(buf: &mut dyn Write, acc: &str, sign: &str, amt: &str, cmt: &str) -> io::
 }
 
 fn main() -> io::Result<()> {
-    let re = r"\d{4}-(\d{2}-\d{2})\s(.*?)(?: \|\| (\D+))?\s\(([\d,]+\.\d{2})\)\s([\d,]+\.\d{2})\s([\d,]+\.\d{2})\s";
+    let re = r" \d{4}-(\d{2}-\d{2})  (.*?)(?: \| \| (\D+))?  \(([\d,]+\.\d{2})\)  ([\d,]+\.\d{2})  ([\d,]+\.\d{2}) ";
     let re = Regex::new(re).unwrap();
 
     // argument parsing
@@ -52,7 +52,7 @@ fn main() -> io::Result<()> {
 
     // parse pdf into text
     let output = Command::new("pdftotext")
-        .args(&["-nopgbrk", "-raw", &input, "-"])
+        .args(&["-nopgbrk", &input, "-"])
         .output()?;
     assert!(output.status.success());
     let src = String::from_utf8(output.stdout).expect("Fail to decode output");
@@ -60,7 +60,7 @@ fn main() -> io::Result<()> {
 
     // take only table
     src = src
-        .split("Balance\n(RM)\n")
+        .split("Balance (RM)\n")
         .nth(1)
         .expect("Cannot split table start");
     src = src
