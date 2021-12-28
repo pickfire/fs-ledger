@@ -15,6 +15,7 @@ const COMMODITY: &str = "RM";
 const INDENT: &str = "\t";
 const LINE_WIDTH: usize = 62;
 
+/// Writes a payment line in ledger.
 fn pay(buf: &mut dyn Write, acc: &str, sign: &str, amt: &str, cmt: &str) -> io::Result<()> {
     let commodity_width = COMMODITY.len();
     let indent_width = if INDENT == "\t" { 8 } else { INDENT.len() };
@@ -90,7 +91,11 @@ fn main() -> io::Result<()> {
             pay(buf, BANK, "-", &cap[5], &cap[2])?;
         } else if cap[2].starts_with("Withdrawal") {
             pay(buf, BANK, "", &cap[4], &cap[2])?;
+        } else if cap[2].starts_with("Adjustment for investment to ") {
+            assert_eq!(&cap[4], "0.00", "Only negative adjustment supported");
+            pay(buf, FUNDS, "-", &cap[5], "Adjustment")?;
         } else {
+            // parse multiple lines of payment for the same transaction
             loop {
                 match (&cap[3], &cap[4], &cap[5]) {
                     (cmt @ "Service Fee", amt, "0.00") => pay(buf, EXPENSE, "", amt, cmt)?,
@@ -109,6 +114,7 @@ fn main() -> io::Result<()> {
                 break;
             }
         }
+        // separate transactions with empty line
         writeln!(buf)?;
     }
 
