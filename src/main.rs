@@ -55,7 +55,8 @@ fn main() -> io::Result<()> {
     let output = Command::new("pdftotext")
         .args(&["-nopgbrk", &input, "-"])
         .output()?;
-    assert!(output.status.success());
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(output.status.success(), "{}", stderr);
     let src = String::from_utf8(output.stdout).expect("Fail to decode output");
     let mut src = &src[..];
 
