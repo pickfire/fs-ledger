@@ -78,7 +78,7 @@ fn main() -> io::Result<()> {
         let title = if &cap[2] == "Deposit" || cap[2].starts_with("Withdrawal") {
             "Funding Societies"
         } else if cap[2].contains("invested") {
-            &cap[2].rsplit("into ").next().unwrap()
+            cap[2].rsplit("into ").next().unwrap()
         } else {
             &cap[2]
         };

@@ -2,7 +2,7 @@
 name = "fs-ledger"
 version = "0.1.0"
 authors = ["Ivan Tham <pickfire@riseup.net>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 regex = "1"
