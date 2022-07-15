@@ -62,13 +62,14 @@ fn main() -> io::Result<()> {
     let mut src = &src[..];
 
     // take only table
-    src = src
-        .split("Balance\n(RM)\n")
+    // pre-2022 uses `Balance (RM)\n`, after that it uses `Balance\n(RM)\n`
+    src = Regex::new(r"Balance[\n ]\(RM\)\n")
+        .unwrap()
+        .splitn(src, 2)
         .nth(1)
-        .or_else(|| src.split("Balance (RM)\n").nth(1)) // pre-2022
         .expect("Cannot split table start");
     src = src
-        .rsplit("Important!\n")
+        .rsplitn(2, "Important!\n")
         .nth(1)
         .expect("Cannot split table end");
 
