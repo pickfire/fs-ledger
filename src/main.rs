@@ -36,7 +36,8 @@ fn pay(buf: &mut dyn Write, acc: &str, sign: &str, amt: &str, cmt: &str) -> io::
 }
 
 fn main() -> io::Result<()> {
-    let re = r" (\d{4}-\d{2}-\d{2})  (.*?)(?: \| \| (\D+))?  \(([\d,]+\.\d{2})\)  ([\d,]+\.\d{2})  ([\d,]+\.\d{2}) ";
+    // pre-2022 uses `| |`, after that it uses `||`
+    let re = r" (\d{4}-\d{2}-\d{2})  (.*?)(?: \| ?\| (\D+))?  \(([\d,]+\.\d{2})\)  ([\d,]+\.\d{2})  ([\d,]+\.\d{2}) ";
     let re = Regex::new(re).unwrap();
 
     // argument parsing
@@ -62,8 +63,9 @@ fn main() -> io::Result<()> {
 
     // take only table
     src = src
-        .split("Balance (RM)\n")
+        .split("Balance\n(RM)\n")
         .nth(1)
+        .or_else(|| src.split("Balance (RM)\n").nth(1)) // pre-2022
         .expect("Cannot split table start");
     src = src
         .rsplit("Important!\n")
