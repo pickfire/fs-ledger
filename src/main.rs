@@ -103,7 +103,10 @@ fn main() -> io::Result<()> {
             loop {
                 match (&cap[3], &cap[4], &cap[5]) {
                     (cmt @ "Service Fee", amt, "0.00") => pay(buf, EXPENSE, "", amt, cmt)?,
+                    (cmt @ "Service Fee", "0.00", amt) => pay(buf, EXPENSE, "-", amt, cmt)?, // revert
+                    (cmt @ "Interest", amt, "0.00") => pay(buf, INCOME, "", amt, cmt)?, // revert
                     (cmt @ "Interest", "0.00", amt) => pay(buf, INCOME, "-", amt, cmt)?,
+                    (cmt @ "Principal", amt, "0.00") => pay(buf, FUNDS, "", amt, cmt)?, // revert
                     (cmt @ "Principal", "0.00", amt) => pay(buf, FUNDS, "-", amt, cmt)?,
                     (cmt @ "Early Payment Fee", "0.00", amt) => pay(buf, FUNDS, "-", amt, cmt)?,
                     (cmt @ "Late Interest Fee", "0.00", amt) => pay(buf, FUNDS, "-", amt, cmt)?,
