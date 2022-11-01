@@ -37,7 +37,7 @@ fn pay(buf: &mut dyn Write, acc: &str, sign: &str, amt: &str, cmt: &str) -> io::
 
 fn main() -> io::Result<()> {
     // pre-2022 uses `| |`, after that it uses `||`
-    let re = r" (\d{4}-\d{2}-\d{2})  (.*?)(?: \| ?\| (\D+))?  \(([\d,]+\.\d{2})\)  ([\d,]+\.\d{2})  ([\d,]+\.\d{2}) ";
+    let re = r" ([0-9]{4}-[0-9]{2}-[0-9]{2})  (.*?)(?: \| ?\| ([^0-9]+))?  \(([[0-9],]+\.[0-9]{2})\)  ([[0-9],]+\.[0-9]{2})  ([[0-9],]+\.[0-9]{2}) ";
     let re = Regex::new(re).unwrap();
 
     // argument parsing
