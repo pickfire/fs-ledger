@@ -11,25 +11,24 @@ const BANK: &str = "assets:bank:pbe";
 const INCOME: &str = "income:interest";
 const EXPENSE: &str = "expenses:service";
 
-const COMMODITY: &str = "RM";
+const COMMODITY: &str = "MYR";
 const INDENT: &str = "\t";
 const LINE_WIDTH: usize = 62;
 
 /// Writes a payment line in ledger.
 fn pay(buf: &mut dyn Write, acc: &str, sign: &str, amt: &str, cmt: &str) -> io::Result<()> {
-    let commodity_width = COMMODITY.len();
     let indent_width = if INDENT == "\t" { 8 } else { INDENT.len() };
-    let pad = LINE_WIDTH - indent_width - acc.len() - commodity_width - sign.len() - amt.len() - 1;
+    let pad = LINE_WIDTH - indent_width - acc.len() - sign.len() - amt.len() - 1;
 
     writeln!(
         buf,
-        "{}{}{:pad$}{} {}{}  ; {}",
+        "{}{}{:pad$} {}{} {}  ; {}",
         INDENT,
         acc,
         "",
-        COMMODITY,
         sign,
         amt,
+        COMMODITY,
         cmt,
         pad = pad
     )
