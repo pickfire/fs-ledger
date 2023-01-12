@@ -36,8 +36,7 @@ fn pay(buf: &mut dyn Write, acc: &str, sign: &str, amt: &str, cmt: &str) -> io::
 
 fn main() -> io::Result<()> {
     // pre-2022 uses `| |`, after that it uses `||`
-    let re = r" ([0-9]{4}-[0-9]{2}-[0-9]{2})  (.*?)(?: \| ?\| ([^0-9]+))?  \(([[0-9],]+\.[0-9]{2})\)  ([[0-9],]+\.[0-9]{2})  ([[0-9],]+\.[0-9]{2}) ";
-    let re = Regex::new(re).unwrap();
+    let re = Regex::new(r" ([0-9]{4}-[0-9]{2}-[0-9]{2})  (.*?)(?: \| ?\| ([^0-9]+))?  \(([[0-9],]+\.[0-9]{2})\)  ([[0-9],]+\.[0-9]{2})  ([[0-9],]+\.[0-9]{2}) ").unwrap();
 
     // argument parsing
     let mut args = env::args().skip(1);
@@ -71,6 +70,12 @@ fn main() -> io::Result<()> {
         .rsplit_once("Important!\n")
         .map(|x| x.0)
         .expect("Cannot split table end");
+
+    // 2023 fix broken page break on description
+    // From Early Payment  (0.00)  0.05  140.45  Fee 2023-01-10
+    //   to Early Payment Fee  (0.00)  0.05  140.45  2023-01-10
+    let desc_re = Regex::new(r"(.*?(?: \| ?\| [^0-9]+))?\n\n(\([[0-9],]+\.[0-9]{2}\)\n\n[[0-9],]+\.[0-9]{2}\n\n[[0-9],]+\.[0-9]{2})\n\n([^0-9]+)\n([0-9]{4}-[0-9]{2}-[0-9]{2})\n").unwrap();
+    let src = &desc_re.replace_all(src, "$1 $3\n\n$2\n\n$4\n");
 
     // convert to single line, sometimes newline appear in middle
     let src = &src.replace('\n', " ");
