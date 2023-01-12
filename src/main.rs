@@ -72,8 +72,8 @@ fn main() -> io::Result<()> {
         .expect("Cannot split table end");
 
     // 2023 fix broken page break on description
-    // From Early Payment  (0.00)  0.05  140.45  Fee 2023-01-10
-    //   to Early Payment Fee  (0.00)  0.05  140.45  2023-01-10
+    // From Early Payment\n\n(0.00)\n\n0.05\n\n140.45\n\nFee\n2023-01-10
+    //   to Early Payment Fee\n\n(0.00)\n\n0.05\n\n140.45\n\n2023-01-10
     let desc_re = Regex::new(r"(.*?(?: \| ?\| [^0-9]+))?\n\n(\([[0-9],]+\.[0-9]{2}\)\n\n[[0-9],]+\.[0-9]{2}\n\n[[0-9],]+\.[0-9]{2})\n\n([^0-9]+)\n([0-9]{4}-[0-9]{2}-[0-9]{2})\n").unwrap();
     let src = &desc_re.replace_all(src, "$1 $3\n\n$2\n\n$4\n");
 
