@@ -53,7 +53,7 @@ fn main() -> io::Result<()> {
 
     // parse pdf into text
     let output = Command::new("pdftotext")
-        .args(&["-nopgbrk", &input, "-"])
+        .args(["-nopgbrk", &input, "-"])
         .output()?;
     let stderr = String::from_utf8(output.stderr).unwrap();
     assert!(output.status.success(), "{}", stderr);
@@ -68,8 +68,8 @@ fn main() -> io::Result<()> {
         .nth(1)
         .expect("Cannot split table start");
     src = src
-        .rsplitn(2, "Important!\n")
-        .nth(1)
+        .rsplit_once("Important!\n")
+        .map(|x| x.0)
         .expect("Cannot split table end");
 
     // convert to single line, sometimes newline appear in middle
@@ -88,7 +88,7 @@ fn main() -> io::Result<()> {
         writeln!(buf, "{} * {}", &cap[1], title)?;
         writeln!(buf, "{}{}", INDENT, ASSET)?;
         if &cap[5] == "0.00" && cap[2].contains("invested") {
-            let cmt = &cap[2].splitn(2, ": ").next().unwrap();
+            let cmt = cap[2].split(": ").next().unwrap();
             pay(buf, FUNDS, "", &cap[4], cmt)?;
         } else if &cap[2] == "Deposit" {
             pay(buf, BANK, "-", &cap[5], &cap[2])?;
