@@ -36,7 +36,7 @@ fn pay(buf: &mut dyn Write, acc: &str, sign: &str, amt: &str, cmt: &str) -> io::
 
 fn main() -> io::Result<()> {
     // pre-2022 uses `| |`, after that it uses `||`
-    let re = Regex::new(r" ([0-9]{4}-[0-9]{2}-[0-9]{2})  (.*?)(?: \| ?\| ([^0-9]+))?  \(([[0-9],]+\.[0-9]{2})\)  ([[0-9],]+\.[0-9]{2})  ([[0-9],]+\.[0-9]{2}) ").unwrap();
+    let re = Regex::new(r"\A ([0-9]{4}-[0-9]{2}-[0-9]{2})  (.*?)(?: \| ?\| ([^0-9]+))?  \(([[0-9],]+\.[0-9]{2})\)  ([[0-9],]+\.[0-9]{2})  ([[0-9],]+\.[0-9]{2}) ").unwrap();
 
     // argument parsing
     let mut args = env::args().skip(1);
@@ -67,7 +67,7 @@ fn main() -> io::Result<()> {
         .nth(1)
         .expect("Cannot split table start");
     src = src
-        .rsplit_once("Important!\n")
+        .rsplit_once("\nImportant!\n")
         .map(|x| x.0)
         .expect("Cannot split table end");
 
@@ -78,11 +78,12 @@ fn main() -> io::Result<()> {
     let src = &desc_re.replace_all(src, "$1 $3\n\n$2\n\n$4\n");
 
     // convert to single line, sometimes newline appear in middle
-    let src = &src.replace('\n', " ");
+    let src = src.replace('\n', " ");
+    let mut src = &src[..];
 
     // parse and output ledger
-    let mut captures = re.captures_iter(src).peekable();
-    while let Some(mut cap) = captures.next() {
+    while let Some(mut cap) = re.captures(src) {
+        src = &src[cap[0].len()..];
         let title = if &cap[2] == "Deposit" || cap[2].starts_with("Withdrawal") {
             "Funding Societies"
         } else if cap[2].contains("invested") {
@@ -116,9 +117,10 @@ fn main() -> io::Result<()> {
                     (cmt @ "Late Interest Fee", "0.00", amt) => pay(buf, FUNDS, "-", amt, cmt)?,
                     (_, dr, cr) => unimplemented!("{} - {} {} {}", &cap[2], &cap[3], dr, cr),
                 }
-                if let Some(ncap) = captures.peek() {
+                if let Some(ncap) = re.captures(src) {
                     if cap[1] == ncap[1] && cap[2] == ncap[2] {
-                        cap = captures.next().unwrap();
+                        cap = ncap;
+                        src = &src[cap[0].len()..];
                         continue;
                     }
                 }
@@ -128,6 +130,7 @@ fn main() -> io::Result<()> {
         // separate transactions with empty line
         writeln!(buf)?;
     }
+    assert_eq!(src, "", "parsing stopped halfway");
 
     Ok(())
 }
