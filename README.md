@@ -29,7 +29,7 @@ Example output (obfuscated):
 	assets:fundingsocieties
 	assets:bank:pbe                               RM 10.00  ; Withdrawal For Name
 
-01-31 * XXXX-00000000 (1 of 1 repayment)
+01-31 * XXXX-00000000  ; 1 of 1 repayment
 	assets:fundingsocieties
 	assets:funds:fundingsocieties               RM -100.00  : Principal
 	income:interest                               RM -1.00  ; Interest

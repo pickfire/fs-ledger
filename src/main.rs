@@ -50,6 +50,7 @@ fn main() -> io::Result<()> {
         &mut stdout
     };
 
+    // TODO: use something else since hyphenation is broken in some cases
     // parse pdf into text
     let output = Command::new("pdftotext")
         .args(["-nopgbrk", &input, "-"])
@@ -84,14 +85,26 @@ fn main() -> io::Result<()> {
     // parse and output ledger
     while let Some(mut cap) = re.captures(src) {
         src = &src[cap[0].len()..];
+        let mut comment = "";
         let title = if &cap[2] == "Deposit" || cap[2].starts_with("Withdrawal") {
             "Funding Societies"
         } else if cap[2].contains("invested") {
+            // Auto Investment: invested 100 into XXXX-00000000
             cap[2].rsplit("into ").next().unwrap()
+        } else if cap[2].ends_with("repayment)") {
+            // XXXX-00000000 (1 of 1 repayment)
+            let mut parts = cap[2].rsplitn(2, " (");
+            comment = parts.next().unwrap().trim_end_matches(')');
+            parts.next().unwrap().trim_start_matches("Revert ")
         } else {
-            &cap[2]
+            cap[2].trim_start_matches("Revert ")
         };
-        writeln!(buf, "{} * {}", &cap[1], title)?;
+        write!(buf, "{} * {}", &cap[1], title)?;
+        if !comment.is_empty() {
+            writeln!(buf, "  ; {}", comment)?;
+        } else {
+            writeln!(buf)?;
+        }
         writeln!(buf, "{}{}", INDENT, ASSET)?;
         if &cap[5] == "0.00" && cap[2].contains("invested") {
             let cmt = cap[2].split(": ").next().unwrap();
