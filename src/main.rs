@@ -124,10 +124,10 @@ fn main() -> io::Result<()> {
                     (cmt @ "Service Fee", "0.00", amt) => pay(buf, EXPENSE, "-", amt, cmt)?, // revert
                     (cmt @ "Interest", amt, "0.00") => pay(buf, INCOME, "", amt, cmt)?, // revert
                     (cmt @ "Interest", "0.00", amt) => pay(buf, INCOME, "-", amt, cmt)?,
+                    (cmt @ "Early Payment Fee", "0.00", amt) => pay(buf, INCOME, "-", amt, cmt)?,
+                    (cmt @ "Late Interest Fee", "0.00", amt) => pay(buf, INCOME, "-", amt, cmt)?,
                     (cmt @ "Principal", amt, "0.00") => pay(buf, FUNDS, "", amt, cmt)?, // revert
                     (cmt @ "Principal", "0.00", amt) => pay(buf, FUNDS, "-", amt, cmt)?,
-                    (cmt @ "Early Payment Fee", "0.00", amt) => pay(buf, FUNDS, "-", amt, cmt)?,
-                    (cmt @ "Late Interest Fee", "0.00", amt) => pay(buf, FUNDS, "-", amt, cmt)?,
                     (_, dr, cr) => unimplemented!("{} - {} {} {}", &cap[2], &cap[3], dr, cr),
                 }
                 if let Some(ncap) = re.captures(src) {
