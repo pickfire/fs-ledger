@@ -142,6 +142,8 @@ fn main() -> io::Result<()> {
         }
         // separate transactions with empty line
         writeln!(buf)?;
+        #[cfg(debug_assertions)]
+        buf.flush()?;
     }
     assert_eq!(src, "", "parsing stopped halfway");
 
