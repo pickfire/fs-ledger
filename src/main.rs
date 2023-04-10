@@ -36,7 +36,7 @@ fn pay(buf: &mut dyn Write, acc: &str, sign: &str, amt: &str, cmt: &str) -> io::
 
 fn main() -> io::Result<()> {
     // pre-2022 uses `| |`, after that it uses `||`
-    let re = Regex::new(r"\A ([0-9]{4}-[0-9]{2}-[0-9]{2})  (.*?)(?: \| ?\| ([^0-9]+))?  \(([[0-9],]+\.[0-9]{2})\)  ([[0-9],]+\.[0-9]{2})  ([[0-9],]+\.[0-9]{2}) ").unwrap();
+    let re = Regex::new(r"\A ([0-9]{4}-[0-9]{2}-[0-9]{2})  (.*?)(?: \| ?\| (.+?))?  \(([[0-9],]+\.[0-9]{2})\)  ([[0-9],]+\.[0-9]{2})  ([[0-9],]+\.[0-9]{2}) ").unwrap();
 
     // argument parsing
     let mut args = env::args().skip(1);
@@ -87,6 +87,9 @@ fn main() -> io::Result<()> {
         src = &src[cap[0].len()..];
         let mut comment = "";
         let title = if &cap[2] == "Deposit" || cap[2].starts_with("Withdrawal") {
+            if let Some(cmt) = cap.get(3) {
+                comment = cmt.as_str();
+            }
             "Funding Societies"
         } else if cap[2].contains("invested") {
             // Auto Investment: invested 100 into XXXX-00000000
@@ -126,6 +129,8 @@ fn main() -> io::Result<()> {
                     (cmt @ "Interest", "0.00", amt) => pay(buf, INCOME, "-", amt, cmt)?,
                     (cmt @ "Early Payment Fee", "0.00", amt) => pay(buf, INCOME, "-", amt, cmt)?,
                     (cmt @ "Late Interest Fee", "0.00", amt) => pay(buf, INCOME, "-", amt, cmt)?,
+                    (cmt @ "Returns", "0.00", amt) => pay(buf, INCOME, "-", amt, cmt)?, // revert
+                    (cmt @ "Late Returns Fee", "0.00", amt) => pay(buf, INCOME, "-", amt, cmt)?, // revert
                     (cmt @ "Principal", amt, "0.00") => pay(buf, FUNDS, "", amt, cmt)?, // revert
                     (cmt @ "Principal", "0.00", amt) => pay(buf, FUNDS, "-", amt, cmt)?,
                     (_, dr, cr) => unimplemented!("{} - {} {} {}", &cap[2], &cap[3], dr, cr),
