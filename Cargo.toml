@@ -2,7 +2,7 @@
 name = "fs-ledger"
 version = "0.1.0"
 authors = ["Ivan Tham <pickfire@riseup.net>"]
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 lopdf = { version = "0.35.0", features = ["serde"] }
