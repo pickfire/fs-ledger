@@ -16,6 +16,7 @@ const FUNDS: &str = "assets:funds:fundingsocieties";
 const BANK: &str = "assets:bank:pbe";
 const INCOME: &str = "income:interest";
 const EXPENSE: &str = "expenses:service";
+const LEGAL: &str = "expenses:legal";
 const TAX: &str = "expenses:tax";
 
 const COMMODITY: &str = "MYR";
@@ -169,6 +170,10 @@ fn header(buf: &mut dyn Write, date: &str, title: &str) -> io::Result<()> {
         let mut parts = title.rsplitn(2, "(");
         comment = parts.next().unwrap().trim_end_matches(')');
         parts.next().unwrap().trim_start_matches("Revert ")
+    } else if title.starts_with("Legal fee deduction for loan") {
+        // Legal fee deduction for loan 'XXXX-00000000'.
+        comment = "Legal fee";
+        title.split('\'').nth(1).unwrap()
     } else {
         title.trim_start_matches("Revert ")
     };
@@ -225,7 +230,7 @@ fn pay(buf: &mut dyn Write, acc: &str, sign: &str, amt: &str, cmt: &str) -> io::
 ///
 /// - 2024-01-01
 /// - XXXX-00000000 (1 of 1 Payment) || Principal
-/// - (0.00)
+/// - 0.00
 /// - 100.00
 /// - 1,000.00
 fn extract_row(
@@ -241,6 +246,9 @@ fn extract_row(
         title.extend(dr.drain(..));
         dr = lines.next()?.to_owned();
     }
+    // debit column should contains brackets like (0.00)
+    assert!(dr.starts_with('(') && dr.ends_with(')'));
+    dr = dr.trim_start_matches('(').trim_end_matches(')').to_owned();
     let (title, cmt) = match title.split_once(" || ") {
         Some((x, y)) => (x.to_owned(), y.to_owned()),
         None => (title.clone(), String::new()),
@@ -267,22 +275,28 @@ fn main() -> io::Result<()> {
     let mut row = extract_row(&mut lines);
     while let Some(mut block) = row {
         header(buf, &block.0, &block.1)?;
-        balance(buf, &block.5)?;
         if &block.4 == "0.00" && block.1.contains("invested") {
             let cmt = block.1.split(": ").next().unwrap();
             pay(buf, FUNDS, "", &block.3, cmt)?;
+            row = extract_row(&mut lines);
         } else if &block.1 == "Deposit" {
             pay(buf, BANK, "-", &block.4, &block.1)?;
+            row = extract_row(&mut lines);
         } else if block.1.starts_with("Withdrawal") {
             pay(buf, BANK, "", &block.3, &block.1)?;
+            row = extract_row(&mut lines);
         } else if block.1.starts_with("Adjustment for investment to ") {
-            assert_eq!(&block.3, "(0.00)", "Only negative adjustment supported");
+            assert_eq!(&block.3, "0.00", "Only negative adjustment supported");
             pay(buf, FUNDS, "-", &block.4, "Adjustment")?;
+            row = extract_row(&mut lines);
+        } else if block.1.starts_with("Legal fee deduction for loan") {
+            pay(buf, LEGAL, "", &block.3, "Legal fee")?;
+            row = extract_row(&mut lines);
         } else {
             // parse multiple lines of payment for the same transaction
             loop {
-                let dr = block.3.trim_start_matches('(').trim_end_matches(')');
-                let cr = block.4.trim_start_matches('(').trim_end_matches(')');
+                let dr = block.3.as_str();
+                let cr = block.4.as_str();
                 let (sign, amt) = match (dr, cr) {
                     (amt, "0.00") => ("", amt),
                     ("0.00", amt) => ("-", amt),
@@ -303,21 +317,21 @@ fn main() -> io::Result<()> {
                 };
                 pay(buf, acc, sign, amt, cmt)?;
                 row = extract_row(&mut lines);
-                if let Some(nblock) = row
+                if let Some(ref nblock) = row
                     && block.0 == nblock.0
                     && block.1 == nblock.1
                 {
-                    block = nblock;
+                    block = row.take().unwrap();
                     continue;
                 }
                 break;
             }
         }
+        balance(buf, &block.5)?;
         // separate transactions with empty line
         writeln!(buf)?;
         #[cfg(debug_assertions)]
         buf.flush()?;
-        row = extract_row(&mut lines);
     }
     Ok(())
 }
