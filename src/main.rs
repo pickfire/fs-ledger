@@ -290,9 +290,13 @@ fn main() -> io::Result<()> {
                 };
                 let cmt = block.2.as_str();
                 let acc = match cmt {
-                    "Service Fee" => EXPENSE,
-                    "Interest" | "Late Interest Fee" | "Early Payment Fee" | "Returns"
-                    | "Late Returns Fee" => INCOME,
+                    "Service Fee" | "SST" => EXPENSE,
+                    "Interest"
+                    | "Late Interest Fee"
+                    | "Early Payment Fee"
+                    | "Returns"
+                    | "Late Returns Fee"
+                    | "Pre-Restructured Late Returns Fee" => INCOME,
                     "Principal" => FUNDS,
                     _ => unimplemented!("unknown cmt {block:?}"),
                 };
