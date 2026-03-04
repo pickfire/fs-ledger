@@ -16,6 +16,7 @@ const FUNDS: &str = "assets:funds:fundingsocieties";
 const BANK: &str = "assets:bank:pbe";
 const INCOME: &str = "income:interest";
 const EXPENSE: &str = "expenses:service";
+const TAX: &str = "expenses:tax";
 
 const COMMODITY: &str = "MYR";
 const INDENT: &str = "\t";
@@ -289,7 +290,8 @@ fn main() -> io::Result<()> {
                 };
                 let cmt = block.2.as_str();
                 let acc = match cmt {
-                    "Service Fee" | "SST" => EXPENSE,
+                    "Service Fee" => EXPENSE,
+                    "SST" => TAX,
                     "Interest"
                     | "Late Interest Fee"
                     | "Early Payment Fee"
