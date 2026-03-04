@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::{self, BufWriter, Write};
 
 use std::fmt::Debug;
-use std::io::{Error, ErrorKind};
+use std::io::Error;
 use std::path::{Path, PathBuf};
 use std::slice::IterMut;
 
@@ -73,8 +73,7 @@ fn filter_func(object_id: (u32, u16), object: &mut Object) -> Option<((u32, u16)
 }
 
 fn load_pdf<P: AsRef<Path>>(path: P) -> Result<Document, Error> {
-    Document::load_filtered(path, filter_func)
-        .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
+    Document::load_filtered(path, filter_func).map_err(|e| Error::other(e.to_string()))
 }
 
 fn get_pdf_text(doc: &Document) -> Result<PdfText, Error> {
@@ -88,10 +87,9 @@ fn get_pdf_text(doc: &Document) -> Result<PdfText, Error> {
         .map(
             |(page_num, page_id): (u32, (u32, u16))| -> Result<(u32, Vec<String>), Error> {
                 let text = doc.extract_text(&[page_num]).map_err(|e| {
-                    Error::new(
-                        ErrorKind::Other,
-                        format!("Failed to extract text from page {page_num} id={page_id:?}: {e:}"),
-                    )
+                    Error::other(format!(
+                        "Failed to extract text from page {page_num} id={page_id:?}: {e:}"
+                    ))
                 })?;
                 Ok((
                     page_num,
@@ -174,11 +172,12 @@ fn header(buf: &mut dyn Write, date: &str, title: &str) -> io::Result<()> {
         title.trim_start_matches("Revert ")
     };
     write!(buf, "{} * {}", &date, title)?;
-    Ok(if !comment.is_empty() {
+    if !comment.is_empty() {
         writeln!(buf, "  ; {}", comment)?;
     } else {
         writeln!(buf)?;
-    })
+    }
+    Ok(())
 }
 
 /// Writes a balance line in ledger.                                 v pad
@@ -302,11 +301,12 @@ fn main() -> io::Result<()> {
                 };
                 pay(buf, acc, sign, amt, cmt)?;
                 row = extract_row(&mut lines);
-                if let Some(nblock) = row {
-                    if block.0 == nblock.0 && block.1 == nblock.1 {
-                        block = nblock;
-                        continue;
-                    }
+                if let Some(nblock) = row
+                    && block.0 == nblock.0
+                    && block.1 == nblock.1
+                {
+                    block = nblock;
+                    continue;
                 }
                 break;
             }
