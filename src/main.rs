@@ -175,7 +175,12 @@ fn header(buf: &mut dyn Write, date: &str, title: &str) -> io::Result<()> {
         comment = "Legal fee";
         title.split('\'').nth(1).unwrap()
     } else {
-        title.trim_start_matches("Revert ")
+        // XXXX-00000000 (X of Y payment)
+        // Revert XXXX-00000000 (X of Y payment)
+        comment = title.rsplitn(2, '(').next().unwrap();
+        comment = comment.trim_end_matches(')');
+        let title = title.trim_start_matches("Revert ");
+        title.splitn(2, ' ').next().unwrap()
     };
     write!(buf, "{} * {}", &date, title)?;
     if !comment.is_empty() {
