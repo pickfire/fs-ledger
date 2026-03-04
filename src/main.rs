@@ -116,7 +116,7 @@ fn get_pdf_text(doc: &Document) -> Result<PdfText, Error> {
 }
 
 fn pdf2text<P: AsRef<Path> + Debug>(path: P) -> Result<Vec<String>, Error> {
-    println!("Load {path:?}");
+    eprintln!("Load {path:?}");
     let doc = load_pdf(&path)?;
     let text = get_pdf_text(&doc)?;
     if !text.errors.is_empty() {
@@ -137,7 +137,7 @@ fn extract_text(pdf_path: &str) -> Result<Vec<String>, Error> {
     let cached_path = pdf_path.with_extension("json");
     let cached_path = Path::new("/tmp").join(cached_path.file_name().unwrap());
     if let Ok(f) = File::open(&cached_path) {
-        println!("Load {cached_path:?}");
+        eprintln!("Load {cached_path:?}");
         return Ok(serde_json::from_reader(f).unwrap());
     };
     let mut text = pdf2text(&pdf_path)?;
