@@ -184,7 +184,7 @@ fn header(buf: &mut dyn Write, date: &str, title: &str) -> io::Result<()> {
     };
     write!(buf, "{} * {}", &date, title)?;
     if !comment.is_empty() {
-        writeln!(buf, "  ; {}", comment)?;
+        writeln!(buf, " | {}", comment)?;
     } else {
         writeln!(buf)?;
     }
@@ -300,9 +300,7 @@ fn main() -> io::Result<()> {
         } else {
             // parse multiple lines of payment for the same transaction
             loop {
-                let dr = block.3.as_str();
-                let cr = block.4.as_str();
-                let (sign, amt) = match (dr, cr) {
+                let (sign, amt) = match (block.3.as_str(), block.4.as_str()) {
                     (amt, "0.00") => ("", amt),
                     ("0.00", amt) => ("-", amt),
                     _ => unreachable!("both sides non-zero {block:?}"),
